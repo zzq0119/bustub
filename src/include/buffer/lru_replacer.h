@@ -14,7 +14,7 @@
 
 #include <list>
 #include <mutex>  // NOLINT
-#include <vector>
+#include <unordered_map>
 
 #include "buffer/replacer.h"
 #include "common/config.h"
@@ -47,6 +47,24 @@ class LRUReplacer : public Replacer {
 
  private:
   // TODO(student): implement me!
+  using Iter = std::list<frame_id_t>::iterator;
+  std::unordered_map<frame_id_t, Iter> frame_map_;
+
+  std::list<frame_id_t> frame_list_;
+
+  size_t num_pages_;
+
+  mutable std::mutex latch;
+
+  inline void AddFrame(frame_id_t frame_id) {
+    frame_list_.emplace_back(frame_id);
+    frame_map_.insert({frame_id, --frame_list_.end()});
+  }
+
+  inline void EraseFrame(frame_id_t frame_id) {
+    frame_list_.erase(frame_map_.at(frame_id));
+    frame_map_.erase(frame_id);
+  }
 };
 
 }  // namespace bustub

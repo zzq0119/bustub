@@ -19,7 +19,7 @@
 
 namespace bustub {
 
-TEST(LRUReplacerTest, DISABLED_SampleTest) {
+TEST(LRUReplacerTest, SampleTest) {
   LRUReplacer lru_replacer(7);
 
   // Scenario: unpin six elements, i.e. add them to the replacer.
@@ -58,5 +58,58 @@ TEST(LRUReplacerTest, DISABLED_SampleTest) {
   lru_replacer.Victim(&value);
   EXPECT_EQ(4, value);
 }
+
+// TEST(LRUReplacerTest, SampleTest1) {
+//   LRUReplacer lru_replacer(3);
+//   frame_id_t value;
+
+//   EXPECT_EQ(false, lru_replacer.Victim(&value));
+
+//   lru_replacer.Unpin(0);
+//   EXPECT_EQ(1, lru_replacer.Size());
+//   EXPECT_EQ(true, lru_replacer.Victim(&value));
+//   EXPECT_EQ(0, value);
+//   EXPECT_EQ(false, lru_replacer.Victim(&value));
+
+//   lru_replacer.Pin(0);
+//   EXPECT_EQ(0, lru_replacer.Size());
+
+//   lru_replacer.Unpin(1);
+//   lru_replacer.Unpin(1);
+//   lru_replacer.Unpin(2);
+//   lru_replacer.Unpin(2);
+//   lru_replacer.Unpin(1);
+//   EXPECT_EQ(2, lru_replacer.Size());
+//   EXPECT_EQ(true, lru_replacer.Victim(&value));
+//   EXPECT_EQ(2, value);
+// }
+
+// TEST(LRUReplacerTest, BasicTest) {
+//   LRUReplacer lru_replacer(100);
+
+//   // push element into replacer
+//   for (int i = 0; i < 100; ++i) {
+//     lru_replacer.Unpin(i);
+//   }
+//   EXPECT_EQ(100, lru_replacer.Size());
+
+//   // reverse then insert again
+//   for (int i = 0; i < 100; ++i) {
+//     lru_replacer.Unpin(99 - i);
+//   }
+
+//   // erase 50 element from the tail
+//   for (int i = 0; i < 50; ++i) {
+//     lru_replacer.Pin(i);
+//   }
+
+//   // check left
+//   frame_id_t value = -1;
+//   for (int i = 99; i >= 50; --i) {
+//     lru_replacer.Victim(&value);
+//     EXPECT_EQ(i, value);
+//     value = -1;
+//   }
+// }
 
 }  // namespace bustub
