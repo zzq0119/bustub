@@ -94,11 +94,15 @@ class HashTableBlockPage {
   bool IsReadable(slot_offset_t bucket_ind) const;
 
  private:
+  // The i-th bit of occupied_ is 1 if the i-th index of array_ has ever been occupied.
   std::atomic_char occupied_[(BLOCK_ARRAY_SIZE - 1) / 8 + 1];
 
+  // The i-th bit of readable_ is 1 if the i-th index of array_ holds a readable value.
   // 0 if tombstone/brand new (never occupied), 1 otherwise.
   std::atomic_char readable_[(BLOCK_ARRAY_SIZE - 1) / 8 + 1];
-  MappingType array_[0];
+
+  // The array that holds the key-value pairs.
+  MappingType array_[BLOCK_ARRAY_SIZE];
 };
 
 }  // namespace bustub
