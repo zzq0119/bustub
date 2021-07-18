@@ -42,6 +42,14 @@ KeyType B_PLUS_TREE_INTERNAL_PAGE_TYPE::KeyAt(int index) const { return array[in
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetKeyAt(int index, const KeyType &key) { array[index].first = key; }
 
+INDEX_TEMPLATE_ARGUMENTS
+void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetValueAt(int index, const ValueType &value) { array[index].second = value; }
+
+INDEX_TEMPLATE_ARGUMENTS
+void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetKeyValueAt(int index, const KeyType &key, const ValueType &value) {
+  array[index] = {key, value};
+}
+
 /*
  * Helper method to find and return array index(or offset), so that its value
  * equals to input "value"
@@ -159,7 +167,17 @@ ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::RemoveAndReturnOnlyChild() { return IN
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveAllTo(BPlusTreeInternalPage *recipient, const KeyType &middle_key,
-                                               BufferPoolManager *buffer_pool_manager) {}
+                                               BufferPoolManager *buffer_pool_manager) {
+  assert(recipient->GetSize() + GetSize() <= GetMaxSize());
+  // manager怎么用？
+  auto size = recipient->GetSize();
+  recipient->SetKeyValueAt(size, middle_key, ValueAt(0));
+  for (int i = 1; i < GetSize(); ++i) {
+    recipient->SetKeyValueAt(size, KeyAt(i), ValueAt(i));
+    ++size;
+  }
+  recipient->SetSize(size);
+}
 
 /*****************************************************************************
  * REDISTRIBUTE
@@ -174,7 +192,15 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveAllTo(BPlusTreeInternalPage *recipient,
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveFirstToEndOf(BPlusTreeInternalPage *recipient, const KeyType &middle_key,
-                                                      BufferPoolManager *buffer_pool_manager) {}
+                                                      BufferPoolManager *buffer_pool_manager) {
+  auto size = recipient->GetSize();
+  recipient->SetKeyValueAt(size, middle_key, ValueAt(0));
+  recipient->SetSize(size + 1);
+  for (int i = 0; i < GetSize() - 1; ++i) {
+    array[i] = array[i + 1];
+  }
+  SetSize(GetSize() - 1);
+}
 
 /* Append an entry at the end.
  * Since it is an internal page, the moved entry(page)'s parent needs to be updated.
@@ -192,7 +218,16 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::CopyLastFrom(const MappingType &pair, Buffe
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveLastToFrontOf(BPlusTreeInternalPage *recipient, const KeyType &middle_key,
-                                                       BufferPoolManager *buffer_pool_manager) {}
+                                                       BufferPoolManager *buffer_pool_manager) {
+  auto size = recipient->GetSize();
+  for (int i = size; i > 0; --i) {
+    recipient->array[i] = recipient->array[i - 1];
+  }
+  recipient->SetKeyAt(1, middle_key);
+  recipient->SetValueAt(0, ValueAt(GetSize() - 1));
+  recipient->SetSize(size + 1);
+  SetSize(GetSize() - 1);
+}
 
 /* Append an entry at the beginning.
  * Since it is an internal page, the moved entry(page)'s parent needs to be updated.
