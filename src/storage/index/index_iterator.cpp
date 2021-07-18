@@ -23,7 +23,7 @@ INDEXITERATOR_TYPE &INDEXITERATOR_TYPE::operator++() {
   if (position_ >= page_->GetSize()) {
     if (auto next_id = page_->GetNextPageId(); next_id != INVALID_PAGE_ID) {
       manager_->UnpinPage(page_->GetPageId(), false);
-      page_ = reinterpret_cast<B_PLUS_TREE_LEAF_PAGE_TYPE *>(manager_->FetchPage(next_id));
+      page_ = reinterpret_cast<B_PLUS_TREE_LEAF_PAGE_TYPE *>(manager_->FetchPage(next_id)->GetData());
       position_ = 0;
     } else {
       page_ = nullptr;
