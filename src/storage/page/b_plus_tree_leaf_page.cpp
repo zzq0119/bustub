@@ -121,7 +121,17 @@ int B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &valu
  * Remove half of key & value pairs from this page to "recipient" page
  */
 INDEX_TEMPLATE_ARGUMENTS
-void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveHalfTo(BPlusTreeLeafPage *recipient) {}
+void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveHalfTo(BPlusTreeLeafPage *recipient) {
+  auto cur = GetSize() / 2;
+  assert(recipient->GetSize() + cur <= recipient->GetMaxSize());
+  auto size = recipient->GetSize();
+
+  for (int i = 0; i < GetSize() - cur; ++i) {
+    recipient->array[size + i] = array[i + cur];
+  }
+  recipient->SetSize(recipient->GetSize() + (GetSize() - cur));
+  SetSize(cur);
+}
 
 /*
  * Copy starting from items, and copy {size} number of elements into me.

@@ -97,6 +97,18 @@ class BufferPoolManager {
   /** @return size of the buffer pool */
   size_t GetPoolSize() { return pool_size_; }
 
+  // DEBUG
+  bool CheckAllUnpined() {
+    bool res = true;
+    for (size_t i = 1; i < pool_size_; i++) {
+      if (pages_[i].pin_count_ != 0) {
+        res = false;
+        std::cout << "page " << pages_[i].page_id_ << " pin count:" << pages_[i].pin_count_ << std::endl;
+      }
+    }
+    return res;
+  }
+
  protected:
   /**
    * Grading function. Do not modify!

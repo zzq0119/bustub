@@ -56,7 +56,7 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetKeyValueAt(int index, const KeyType &key
  */
 INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueIndex(const ValueType &value) const {
-  for (int i = 1; i < GetSize(); ++i) {
+  for (int i = 0; i < GetSize(); ++i) {
     if (array[i].second == value) {
       return i;
     }
@@ -118,7 +118,14 @@ void B_PLUS_TREE_INTERNAL_PAGE_TYPE::PopulateNewRoot(const ValueType &old_value,
 INDEX_TEMPLATE_ARGUMENTS
 int B_PLUS_TREE_INTERNAL_PAGE_TYPE::InsertNodeAfter(const ValueType &old_value, const KeyType &new_key,
                                                     const ValueType &new_value) {
-  return 0;
+  auto index = ValueIndex(old_value);
+  assert(index != -1);
+  for (int i = GetSize(); i > index + 1; --i) {
+    array[i] = array[i - 1];
+  }
+  array[index + 1] = {new_key, new_value};
+  SetSize(GetSize() + 1);
+  return GetSize();
 }
 
 /*****************************************************************************
@@ -129,7 +136,26 @@ int B_PLUS_TREE_INTERNAL_PAGE_TYPE::InsertNodeAfter(const ValueType &old_value, 
  */
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveHalfTo(BPlusTreeInternalPage *recipient,
-                                                BufferPoolManager *buffer_pool_manager) {}
+                                                BufferPoolManager *buffer_pool_manager) {
+  assert(recipient != nullptr);
+  int total = GetMaxSize() + 1;
+  assert(GetSize() == total);
+  // copy last half
+  int half = total / 2;  // max:4 x,1,2,3,4 -> 2,3,4
+  page_id_t recipPageId = recipient->GetPageId();
+  for (int i = half; i < total; i++) {
+    recipient->array[i - half].first = array[i].first;
+    recipient->array[i - half].second = array[i].second;
+    // update children's parent page
+    auto childRawPage = buffer_pool_manager->FetchPage(array[i].second);
+    BPlusTreePage *childTreePage = reinterpret_cast<BPlusTreePage *>(childRawPage);
+    childTreePage->SetParentPageId(recipPageId);
+    buffer_pool_manager->UnpinPage(array[i].second, true);
+  }
+  // set size,is odd, bigger is last part
+  SetSize(half);
+  recipient->SetSize(total - half);
+}
 
 /* Copy entries into me, starting from {items} and copy {size} entries.
  * Since it is an internal page, for all entries (pages) moved, their parents page now changes to me.

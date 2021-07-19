@@ -79,6 +79,10 @@ class BPlusTree {
   // expose for test purpose
   Page *FindLeafPage(const KeyType &key, bool leftMost = false);
 
+  // expose for test purpose
+  bool Check(bool force = false);
+  bool openCheck = true;
+
  private:
   void StartNewTree(const KeyType &key, const ValueType &value);
 
@@ -94,8 +98,7 @@ class BPlusTree {
   bool CoalesceOrRedistribute(N *node, Transaction *transaction = nullptr);
 
   template <typename N>
-  bool Coalesce(N *&neighbor_node, N *&node, BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> *&parent,
-                int index, Transaction *transaction = nullptr);
+  bool Coalesce(N *&neighbor_node, N *&node, InternalPage *&parent, int index, Transaction *transaction = nullptr);
 
   template <typename N>
   void Redistribute(N *neighbor_node, N *node, int index);
@@ -108,6 +111,9 @@ class BPlusTree {
   void ToGraph(BPlusTreePage *page, BufferPoolManager *bpm, std::ofstream &out) const;
 
   void ToString(BPlusTreePage *page, BufferPoolManager *bpm) const;
+
+  int isBalanced(page_id_t pid);
+  bool isPageCorr(page_id_t pid, std::pair<KeyType, KeyType> &out);
 
   // member variable
   std::string index_name_;
