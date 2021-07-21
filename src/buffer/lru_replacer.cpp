@@ -38,11 +38,16 @@ void LRUReplacer::Pin(frame_id_t frame_id) {
 
 void LRUReplacer::Unpin(frame_id_t frame_id) {
   std::lock_guard<std::mutex> guard(latch);
-  if (frame_map_.find(frame_id) == frame_map_.end()) {
+  if (auto iter = frame_map_.find(frame_id); iter == frame_map_.end()) {
     if (frame_map_.size() >= num_pages_) {
       EraseFrame(*frame_list_.begin());
     }
     AddFrame(frame_id);
+  } else {
+    auto val = *iter->second;
+    frame_list_.erase(iter->second);
+    frame_list_.emplace_back(val);
+    iter->second = (--frame_list_.end());
   }
 }
 

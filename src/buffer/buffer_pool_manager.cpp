@@ -41,7 +41,8 @@ Page *BufferPoolManager::FetchPageImpl(page_id_t page_id) {
   frame_id_t frame;
   if (auto iter = page_table_.find(page_id); iter != page_table_.end()) {
     replacer_->Pin(iter->second);
-    return &pages_[iter->first];
+    pages_[iter->second].pin_count_++;
+    return &pages_[iter->second];
   }
   // 1.2    If P does not exist, find a replacement page (R) from either the free list or the replacer.
   //        Note that pages are always found from the free list first.
