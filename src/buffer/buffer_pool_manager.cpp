@@ -75,15 +75,17 @@ bool BufferPoolManager::UnpinPageImpl(page_id_t page_id, bool is_dirty) {
   std::lock_guard guard(latch_);
   if (auto iter = page_table_.find(page_id); iter == page_table_.end()) {
     return false;
-  } else if (pages_[iter->second].pin_count_ == 0) {
-    return false;
   } else {
-    --pages_[iter->second].pin_count_;
-    if (pages_[iter->second].pin_count_ == 0) {
-      replacer_->Unpin(iter->second);
-    }
     pages_[iter->second].is_dirty_ |= is_dirty;
-    return true;
+    if (pages_[iter->second].pin_count_ == 0) {
+      return false;
+    } else {
+      --pages_[iter->second].pin_count_;
+      if (pages_[iter->second].pin_count_ == 0) {
+        replacer_->Unpin(iter->second);
+      }
+      return true;
+    }
   }
 }
 // optimize?

@@ -148,8 +148,7 @@ TEST(BPlusTreeInsertTests, InsertScale) {
   GenericComparator<16> comparator(key_schema);
 
   DiskManager *disk_manager = new DiskManager("test.db");
-  //这个size 8的时候过不了，原因是什么？
-  BufferPoolManager *bpm = new BufferPoolManager(32, disk_manager);
+  BufferPoolManager *bpm = new BufferPoolManager(8, disk_manager);
   // create b+ tree
   BPlusTree<GenericKey<16>, RID, GenericComparator<16>> tree("foo_pk", bpm, comparator);
   GenericKey<16> index_key;
@@ -216,7 +215,7 @@ TEST(BPlusTreeInsertTests, InsertReverse) {
   GenericComparator<16> comparator(key_schema);
 
   DiskManager *disk_manager = new DiskManager("test.db");
-  BufferPoolManager *bpm = new BufferPoolManager(32, disk_manager);
+  BufferPoolManager *bpm = new BufferPoolManager(8, disk_manager);
   // create b+ tree
   BPlusTree<GenericKey<16>, RID, GenericComparator<16>> tree("foo_pk", bpm, comparator);
   GenericKey<16> index_key;
@@ -281,7 +280,7 @@ TEST(BPlusTreeInsertTests, InsertRandom) {
   GenericComparator<8> comparator(key_schema);
 
   DiskManager *disk_manager = new DiskManager("test.db");
-  BufferPoolManager *bpm = new BufferPoolManager(100, disk_manager);
+  BufferPoolManager *bpm = new BufferPoolManager(50, disk_manager);
   // create b+ tree
   BPlusTree<GenericKey<8>, RID, GenericComparator<8>> tree("foo_pk", bpm, comparator);
   GenericKey<8> index_key;
@@ -300,10 +299,6 @@ TEST(BPlusTreeInsertTests, InsertRandom) {
     keys.push_back(i + 1);
   }
   std::random_shuffle(keys.begin(), keys.end());
-  // std::for_each(keys.begin(), keys.end(), [](int i) {
-  //  std::cerr << i << " ";
-  //});
-  // std::cerr << std::endl;
 
   for (auto key : keys) {
     int64_t value = key & 0xFFFFFFFF;
