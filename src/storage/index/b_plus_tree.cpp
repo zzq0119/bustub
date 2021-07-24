@@ -204,8 +204,9 @@ void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *transaction) {
   leaf->RemoveAndDeleteRecord(key, comparator_);
   if (leaf->GetSize() < leaf->GetMinSize()) {
     CoalesceOrRedistribute(leaf, transaction);
+  } else {
+    buffer_pool_manager_->UnpinPage(leaf->GetPageId(), true);
   }
-  buffer_pool_manager_->UnpinPage(leaf->GetPageId(), true);
 }
 
 /*
@@ -218,6 +219,7 @@ void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *transaction) {
 INDEX_TEMPLATE_ARGUMENTS
 template <typename N>
 bool BPLUSTREE_TYPE::CoalesceOrRedistribute(N *node, Transaction *transaction) {
+  //一定会Unpin node
   static_assert(std::is_same_v<N, InternalPage> || std::is_same_v<N, LeafPage>);
   if (node->IsRootPage()) {
     return AdjustRoot(node);
@@ -227,7 +229,8 @@ bool BPLUSTREE_TYPE::CoalesceOrRedistribute(N *node, Transaction *transaction) {
   // 1. 获取前后index
   // 2. 判断能否移动元素
   // 3. 不能的话，进行合并
-  auto parent = reinterpret_cast<InternalPage *>(buffer_pool_manager_->FetchPage(node->GetParentPageId())->GetData());
+  auto page = buffer_pool_manager_->FetchPage(node->GetParentPageId());
+  auto parent = reinterpret_cast<InternalPage *>(page->GetData());
   int index = parent->ValueIndex(node->GetPageId());
 
   N *prev = nullptr;
@@ -261,7 +264,6 @@ bool BPLUSTREE_TYPE::CoalesceOrRedistribute(N *node, Transaction *transaction) {
   } else {
     assert(false);
   }
-  buffer_pool_manager_->UnpinPage(parent->GetPageId(), true);
   return false;
 }
 
@@ -281,6 +283,7 @@ bool BPLUSTREE_TYPE::CoalesceOrRedistribute(N *node, Transaction *transaction) {
 INDEX_TEMPLATE_ARGUMENTS
 template <typename N>
 bool BPLUSTREE_TYPE::Coalesce(N *&next, N *&node, InternalPage *&parent, int index, Transaction *transaction) {
+  // 一定会Unpin next, node, parent，删除next
   // 逻辑：
   // 1. 将next的所有元素移动到node。
   // 2. 删除next，以及parent里面对应next的key
@@ -299,6 +302,7 @@ bool BPLUSTREE_TYPE::Coalesce(N *&next, N *&node, InternalPage *&parent, int ind
   if (parent->GetSize() <= parent->GetMinSize()) {
     return CoalesceOrRedistribute(parent, transaction);
   }
+  buffer_pool_manager_->UnpinPage(parent->GetPageId(), true);
   return false;
 }
 
@@ -314,6 +318,7 @@ bool BPLUSTREE_TYPE::Coalesce(N *&next, N *&node, InternalPage *&parent, int ind
 INDEX_TEMPLATE_ARGUMENTS
 template <typename N>
 void BPLUSTREE_TYPE::Redistribute(N *neighbor_node, N *node, int index) {
+  //一定会Unpin node，neighbor_node
   // index==0 说明neighbor_node在node后面，否则说明在前面。将neighbor_node的内容移到node里面。
   auto parent = reinterpret_cast<InternalPage *>(buffer_pool_manager_->FetchPage(node->GetParentPageId())->GetData());
   int pos = parent->ValueIndex(node->GetPageId());
@@ -353,6 +358,7 @@ void BPLUSTREE_TYPE::Redistribute(N *neighbor_node, N *node, int index) {
  */
 INDEX_TEMPLATE_ARGUMENTS
 bool BPLUSTREE_TYPE::AdjustRoot(BPlusTreePage *old_root_node) {
+  //一定会Unpin node
   if (old_root_node->GetSize() == 0) {
     buffer_pool_manager_->UnpinPage(old_root_node->GetPageId(), false);
     buffer_pool_manager_->DeletePage(old_root_node->GetPageId());
@@ -370,6 +376,7 @@ bool BPLUSTREE_TYPE::AdjustRoot(BPlusTreePage *old_root_node) {
     buffer_pool_manager_->UnpinPage(new_root->GetPageId(), true);
     return true;
   }
+  buffer_pool_manager_->UnpinPage(old_root_node->GetPageId(), false);
   return false;
 }
 

@@ -225,6 +225,7 @@ TEST(BPlusTreeDeleteTests, DeleteBasic) {
   for (auto key : remove_keys) {
     index_key.SetFromInteger(key);
     tree.Remove(index_key, transaction);
+    ASSERT_TRUE(tree.Check(bpm));
   }
 
   // all gone
@@ -234,6 +235,7 @@ TEST(BPlusTreeDeleteTests, DeleteBasic) {
     index_key.SetFromInteger(key);
     tree.GetValue(index_key, &rids);
     EXPECT_EQ(rids.size(), 0);
+    ASSERT_TRUE(tree.Check(bpm));
   }
 
   ASSERT_TRUE(bpm->CheckAllUnpined());
@@ -307,7 +309,6 @@ TEST(BPlusTreeDeleteTests, DeleteScale) {
   // delete all
   for (auto key : keys) {
     index_key.SetFromInteger(key);
-    // std::cout << "remove :" << index_key << std::endl;
     tree.Remove(index_key, transaction);
   }
 

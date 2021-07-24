@@ -77,7 +77,8 @@ bool BufferPoolManager::UnpinPageImpl(page_id_t page_id, bool is_dirty) {
     return false;
   } else {
     pages_[iter->second].is_dirty_ |= is_dirty;
-    if (pages_[iter->second].pin_count_ == 0) {
+    if (pages_[iter->second].pin_count_ <= 0) {
+      assert(false);
       return false;
     } else {
       --pages_[iter->second].pin_count_;
@@ -143,6 +144,7 @@ bool BufferPoolManager::DeletePageImpl(page_id_t page_id) {
     // 3.   Otherwise, P can be deleted. Remove P from the page table, reset its metadata and return it to the free
     // list.
     if (frame_id_t frame = iter->second; pages_[frame].pin_count_ > 0) {
+      assert(false);
       return false;
     } else {
       replacer_->Pin(frame);

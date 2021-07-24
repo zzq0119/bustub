@@ -25,7 +25,11 @@ class IndexIterator {
   // you may define your own constructor based on your member variables
   IndexIterator(B_PLUS_TREE_LEAF_PAGE_TYPE *page, BufferPoolManager *manager, int position)
       : page_(page), manager_(manager), position_(position){};
-  ~IndexIterator() = default;
+  ~IndexIterator() {
+    if (page_ != nullptr) {
+      manager_->UnpinPage(page_->GetPageId(), false);
+    }
+  }
 
   bool isEnd();
 
