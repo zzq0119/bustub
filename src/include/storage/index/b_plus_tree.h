@@ -77,7 +77,8 @@ class BPlusTree {
   // read data from file and remove one by one
   void RemoveFromFile(const std::string &file_name, Transaction *transaction = nullptr);
   // expose for test purpose
-  Page *FindLeafPage(const KeyType &key, bool leftMost = false);
+  LeafPage *FindLeafPage(const KeyType &key, bool leftMost = false, OpType op = OpType::READ,
+                         Transaction *transaction = nullptr);
 
   // expose for test purpose
   bool Check(bool force = false);
@@ -90,6 +91,10 @@ class BPlusTree {
 
   void InsertIntoParent(BPlusTreePage *old_node, const KeyType &key, BPlusTreePage *new_node,
                         Transaction *transaction = nullptr);
+
+  BPlusTreePage *CrabingFetchPage(page_id_t page_id, OpType type, page_id_t prev, Transaction *transaction);
+
+  void FreePagesInTransaction(bool exclusive, Transaction *transaction, page_id_t cur = -1);
 
   template <typename N>
   N *Split(N *node);

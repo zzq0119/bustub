@@ -27,6 +27,8 @@ namespace bustub {
 // define page type enum
 enum class IndexPageType { INVALID_INDEX_PAGE = 0, LEAF_PAGE, INTERNAL_PAGE };
 
+enum class OpType { READ, INSERT, DELETE };
+
 /**
  * Both internal and leaf page are inherited from this page.
  *
@@ -61,6 +63,8 @@ class BPlusTreePage {
   void SetPageId(page_id_t page_id);
 
   void SetLSN(lsn_t lsn = INVALID_LSN);
+
+  bool IsSafe(OpType type) const;
 
  private:
   // member variable, attributes that both internal and leaf page share
