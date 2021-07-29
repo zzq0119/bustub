@@ -47,6 +47,11 @@ class IndexIterator {
   bool operator!=(const IndexIterator &itr) const { return !this->operator==(itr); }
 
  private:
+  void UnlockAndUnPin() {
+    manager_->FetchPage(page_->GetPageId())->RUnlatch();
+    manager_->UnpinPage(page_->GetPageId(), false);
+    manager_->UnpinPage(page_->GetPageId(), false);
+  }
   // add your own private member variables here
   B_PLUS_TREE_LEAF_PAGE_TYPE *page_;
   BufferPoolManager *manager_;

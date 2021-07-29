@@ -97,7 +97,7 @@ class BPlusTree {
   void FreePagesInTransaction(bool exclusive, Transaction *transaction, page_id_t cur = -1);
 
   template <typename N>
-  N *Split(N *node);
+  N *Split(N *node, Transaction *transaction);
 
   template <typename N>
   bool CoalesceOrRedistribute(N *node, Transaction *transaction = nullptr);
@@ -120,6 +120,10 @@ class BPlusTree {
   int isBalanced(page_id_t pid);
   bool isPageCorr(page_id_t pid, std::pair<KeyType, KeyType> &out);
 
+  void LockRootPageId(bool exclusive);
+
+  void TryUnlockRootPageId(bool exclusive);
+
   // member variable
   std::string index_name_;
   page_id_t root_page_id_;
@@ -127,6 +131,8 @@ class BPlusTree {
   KeyComparator comparator_;
   int leaf_max_size_;
   int internal_max_size_;
+  ReaderWriterLatch mutex_;
+  static thread_local int root_locked_cnt_;
 };
 
 }  // namespace bustub
