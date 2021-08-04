@@ -77,14 +77,33 @@ class Catalog {
    */
   TableMetadata *CreateTable(Transaction *txn, const std::string &table_name, const Schema &schema) {
     BUSTUB_ASSERT(names_.count(table_name) == 0, "Table names should be unique!");
-    return nullptr;
+    table_oid_t id = next_table_oid_++;
+    names_.emplace(table_name, id);
+    auto heap = std::make_unique<TableHeap>(bpm_, lock_manager_, log_manager_, txn);
+    auto data = std::make_unique<TableMetadata>(schema, table_name, std::move(heap), id);
+    tables_.emplace(id, std::move(data));
+    return tables_.at(id).get();
   }
 
   /** @return table metadata by name */
-  TableMetadata *GetTable(const std::string &table_name) { return nullptr; }
+  TableMetadata *GetTable(const std::string &table_name) {
+    auto iter = names_.find(table_name);
+    if (iter == names_.end()) {
+      throw std::out_of_range("name not exists");
+      return nullptr;
+    }
+    return tables_.find(iter->second)->second.get();
+  }
 
   /** @return table metadata by oid */
-  TableMetadata *GetTable(table_oid_t table_oid) { return nullptr; }
+  TableMetadata *GetTable(table_oid_t table_oid) {
+    auto iter = tables_.find(table_oid);
+    if (iter == tables_.end()) {
+      throw std::out_of_range("oid not exists");
+      return nullptr;
+    }
+    return iter->second.get();
+  }
 
   /**
    * Create a new index, populate existing data of the table and return its metadata.
@@ -101,19 +120,45 @@ class Catalog {
   IndexInfo *CreateIndex(Transaction *txn, const std::string &index_name, const std::string &table_name,
                          const Schema &schema, const Schema &key_schema, const std::vector<uint32_t> &key_attrs,
                          size_t keysize) {
-    return nullptr;
+    index_oid_t id = next_index_oid_++;
+    index_names_[table_name].emplace(id, index_name);
+    auto index = std::make_unique<Index>(new IndexMetadata(index_name, table_name, &schema, key_attrs));
+    auto res = std::make_unique<IndexInfo>(key_schema, index_name, std::move(index), id, table_name, keysize);
+    indexes_.emplace(id, std::move(res));
+    return indexes_.at(id).get();
   }
 
-  IndexInfo *GetIndex(const std::string &index_name, const std::string &table_name) { return nullptr; }
+  IndexInfo *GetIndex(const std::string &index_name, const std::string &table_name) {
+    auto iter = index_names_.find(table_name);
+    if (iter == index_names_.end()) {
+      throw std::out_of_range("name not exists");
+      return nullptr;
+    }
+    return indexes_.at(iter->second.at(index_name)).get();
+  }
 
-  IndexInfo *GetIndex(index_oid_t index_oid) { return nullptr; }
+  IndexInfo *GetIndex(index_oid_t index_oid) {
+    auto iter = indexes_.find(index_oid);
+    if (iter == indexes_.end()) {
+      throw std::out_of_range("oid not exists");
+      return nullptr;
+    }
+    return iter->second.get();
+  }
 
-  std::vector<IndexInfo *> GetTableIndexes(const std::string &table_name) { return std::vector<IndexInfo *>(); }
+  std::vector<IndexInfo *> GetTableIndexes(const std::string &table_name) {
+    auto &mp = index_names_.at(table_name);
+    std::vector<IndexInfo *> res;
+    for (auto &[name, id] : mp) {
+      res.push_back(indexes_.at(id).get());
+    }
+    return res;
+  }
 
  private:
-  [[maybe_unused]] BufferPoolManager *bpm_;
-  [[maybe_unused]] LockManager *lock_manager_;
-  [[maybe_unused]] LogManager *log_manager_;
+  BufferPoolManager *bpm_;
+  LockManager *lock_manager_;
+  LogManager *log_manager_;
 
   /** tables_ : table identifiers -> table metadata. Note that tables_ owns all table metadata. */
   std::unordered_map<table_oid_t, std::unique_ptr<TableMetadata>> tables_;
