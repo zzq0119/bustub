@@ -22,12 +22,11 @@ bool ClockReplacer::Victim(frame_id_t *frame_id) {
   std::lock_guard<std::mutex> guard(latch);
   if (frame_map_.empty()) {
     return false;
-  } else {
-    ReplaceFrame();
-    *frame_id = frame_list_.front().first;
-    EraseFrame(*frame_id);
-    return true;
   }
+  ReplaceFrame();
+  *frame_id = frame_list_.front().first;
+  EraseFrame(*frame_id);
+  return true;
 }
 
 void ClockReplacer::Pin(frame_id_t frame_id) {

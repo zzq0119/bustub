@@ -229,7 +229,7 @@ void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *transaction) {
 INDEX_TEMPLATE_ARGUMENTS
 template <typename N>
 bool BPLUSTREE_TYPE::CoalesceOrRedistribute(N *node, Transaction *transaction) {
-  //现在不会Unpin node
+  // 现在不会Unpin node
   static_assert(std::is_same_v<N, InternalPage> || std::is_same_v<N, LeafPage>);
   if (node->IsRootPage()) {
     bool res = AdjustRoot(node);
@@ -335,12 +335,12 @@ bool BPLUSTREE_TYPE::Coalesce(N *&next, N *&node, InternalPage *&parent, int ind
 INDEX_TEMPLATE_ARGUMENTS
 template <typename N>
 void BPLUSTREE_TYPE::Redistribute(N *neighbor_node, N *node, int index) {
-  //现在不会Unpin node，neighbor_node
+  // 现在不会Unpin node，neighbor_node
   // index==0 说明neighbor_node在node后面，否则说明在前面。将neighbor_node的内容移到node里面。
   auto parent = reinterpret_cast<InternalPage *>(buffer_pool_manager_->FetchPage(node->GetParentPageId())->GetData());
   int pos = parent->ValueIndex(node->GetPageId());
   if constexpr (std::is_same_v<N, InternalPage>) {
-    //将需要移动的那个元素的key，放到node和neighbor中间
+    // 将需要移动的那个元素的key，放到node和neighbor中间
     if (index == 0) {
       auto val = parent->KeyAt(pos + 1);
       parent->SetKeyAt(pos + 1, neighbor_node->KeyAt(1));
@@ -375,7 +375,7 @@ void BPLUSTREE_TYPE::Redistribute(N *neighbor_node, N *node, int index) {
  */
 INDEX_TEMPLATE_ARGUMENTS
 bool BPLUSTREE_TYPE::AdjustRoot(BPlusTreePage *old_root_node) {
-  //现在不会Unpin old_root_node
+  // 现在不会Unpin old_root_node
   if (old_root_node->GetSize() == 0) {
     // buffer_pool_manager_->UnpinPage(old_root_node->GetPageId(), false);
     // buffer_pool_manager_->DeletePage(old_root_node->GetPageId());

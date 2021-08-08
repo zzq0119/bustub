@@ -43,10 +43,9 @@ Page *BufferPoolManager::FetchPageImpl(page_id_t page_id) {
     replacer_->Pin(iter->second);
     pages_[iter->second].pin_count_++;
     return &pages_[iter->second];
-  }
-  // 1.2    If P does not exist, find a replacement page (R) from either the free list or the replacer.
-  //        Note that pages are always found from the free list first.
-  else if (free_list_.size() > 0) {
+  } else if (!free_list_.empty()) {
+    // 1.2    If P does not exist, find a replacement page (R) from either the free list or the replacer.
+    //        Note that pages are always found from the free list first.
     frame = free_list_.front();
     free_list_.pop_front();
     replacer_->Unpin(frame);
@@ -73,20 +72,20 @@ Page *BufferPoolManager::FetchPageImpl(page_id_t page_id) {
 // ok
 bool BufferPoolManager::UnpinPageImpl(page_id_t page_id, bool is_dirty) {
   std::lock_guard guard(latch_);
-  if (auto iter = page_table_.find(page_id); iter == page_table_.end()) {
+  auto iter = page_table_.find(page_id);
+  if (iter == page_table_.end()) {
+    return false;
+  }
+  pages_[iter->second].is_dirty_ |= is_dirty;
+  if (pages_[iter->second].pin_count_ <= 0) {
+    assert(false);
     return false;
   } else {
-    pages_[iter->second].is_dirty_ |= is_dirty;
-    if (pages_[iter->second].pin_count_ <= 0) {
-      assert(false);
-      return false;
-    } else {
-      --pages_[iter->second].pin_count_;
-      if (pages_[iter->second].pin_count_ == 0) {
-        replacer_->Unpin(iter->second);
-      }
-      return true;
+    --pages_[iter->second].pin_count_;
+    if (pages_[iter->second].pin_count_ == 0) {
+      replacer_->Unpin(iter->second);
     }
+    return true;
   }
 }
 // optimize?

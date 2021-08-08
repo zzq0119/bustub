@@ -93,8 +93,8 @@ void DeleteHelperSplit(BPlusTree<GenericKey<8>, RID, GenericComparator<8>> *tree
   delete transaction;
 }
 
-void InsertHelper16(BPlusTree<GenericKey<16>, RID, GenericComparator<16>> &tree, const std::vector<int64_t> &keys,
-                    __attribute__((unused)) uint64_t thread_itr = 0) {
+void InsertHelper16(BPlusTree<GenericKey<16>, RID, GenericComparator<16>> &tree,  // NOLINT
+                    const std::vector<int64_t> &keys, __attribute__((unused)) uint64_t thread_itr = 0) {
   GenericKey<16> index_key;
   RID rid;
   // create transaction
@@ -108,8 +108,8 @@ void InsertHelper16(BPlusTree<GenericKey<16>, RID, GenericComparator<16>> &tree,
   delete transaction;
 }
 
-void InsertAndGetHelper16(BPlusTree<GenericKey<16>, RID, GenericComparator<16>> &tree, const std::vector<int64_t> &keys,
-                          __attribute__((unused)) uint64_t thread_itr = 0) {
+void InsertAndGetHelper16(BPlusTree<GenericKey<16>, RID, GenericComparator<16>> &tree,  // NOLINT
+                          const std::vector<int64_t> &keys, __attribute__((unused)) uint64_t thread_itr = 0) {
   GenericKey<16> index_key;
   RID rid;
   // create transaction
@@ -129,7 +129,7 @@ void InsertAndGetHelper16(BPlusTree<GenericKey<16>, RID, GenericComparator<16>> 
 }
 
 // helper function to iterate
-void IterateHelper(BPlusTree<GenericKey<16>, RID, GenericComparator<16>> &tree) {
+void IterateHelper(BPlusTree<GenericKey<16>, RID, GenericComparator<16>> &tree) {  // NOLINT
   int64_t current_key = 0;
   for (auto iterator = tree.begin(); iterator.isEnd() == false; ++iterator) {
     auto location = (*iterator).second;
@@ -138,7 +138,7 @@ void IterateHelper(BPlusTree<GenericKey<16>, RID, GenericComparator<16>> &tree) 
   }
 }
 
-void DeleteAndGetHelper16(BPlusTree<GenericKey<16>, RID, GenericComparator<16>> &tree,
+void DeleteAndGetHelper16(BPlusTree<GenericKey<16>, RID, GenericComparator<16>> &tree,  // NOLINT
                           const std::vector<int64_t> &remove_keys, __attribute__((unused)) uint64_t thread_itr = 0) {
   GenericKey<16> index_key;
   // create transaction
@@ -491,7 +491,7 @@ TEST(BPlusTreeConcurrentTest, DeleteAndGetTest) {
   remove("test.log");
 }
 
-void DeleteHelper16(BPlusTree<GenericKey<16>, RID, GenericComparator<16>> &tree,
+void DeleteHelper16(BPlusTree<GenericKey<16>, RID, GenericComparator<16>> &tree,  // NOLINT
                     const std::vector<int64_t> &remove_keys, __attribute__((unused)) uint64_t thread_itr = 0) {
   GenericKey<16> index_key;
   // create transaction
@@ -548,7 +548,7 @@ TEST(BPlusTreeConcurrentTest, DeleteTest3) {
   remove("test.db");
 }
 
-void DeleteHelperSplit16(BPlusTree<GenericKey<16>, RID, GenericComparator<16>> &tree,
+void DeleteHelperSplit16(BPlusTree<GenericKey<16>, RID, GenericComparator<16>> &tree,  // NOLINT
                          const std::vector<int64_t> &remove_keys, int total_threads,
                          __attribute__((unused)) uint64_t thread_itr) {
   GenericKey<16> index_key;
@@ -660,8 +660,9 @@ TEST(BPlusTreeConcurrentTest, DeleteTest5) {
   remove("test.db");
 }
 
-void InsertHelperSplit16(BPlusTree<GenericKey<16>, RID, GenericComparator<16>> &tree, const std::vector<int64_t> &keys,
-                         int total_threads, __attribute__((unused)) uint64_t thread_itr) {
+void InsertHelperSplit16(BPlusTree<GenericKey<16>, RID, GenericComparator<16>> &tree,  // NOLINT
+                         const std::vector<int64_t> &keys, int total_threads,
+                         __attribute__((unused)) uint64_t thread_itr) {
   GenericKey<16> index_key;
   RID rid;
   // create transaction

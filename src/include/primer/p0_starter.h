@@ -13,6 +13,7 @@
 #pragma once
 
 #include <memory>
+#include <utility>
 
 namespace bustub {
 
@@ -107,7 +108,8 @@ class RowMatrixOperations {
   static std::unique_ptr<RowMatrix<T>> AddMatrices(std::unique_ptr<RowMatrix<T>> mat1,
                                                    std::unique_ptr<RowMatrix<T>> mat2) {
     // TODO(P0): Add code
-    auto r = mat1->GetRows(), c = mat1->GetColumns();
+    auto r = mat1->GetRows();
+    auto c = mat1->GetColumns();
     if (mat1->GetRows() != mat2->GetRows() || mat1->GetColumns() != mat2->GetColumns()) {
       return std::unique_ptr<RowMatrix<T>>(nullptr);
     }
@@ -125,7 +127,9 @@ class RowMatrixOperations {
   static std::unique_ptr<RowMatrix<T>> MultiplyMatrices(std::unique_ptr<RowMatrix<T>> mat1,
                                                         std::unique_ptr<RowMatrix<T>> mat2) {
     // TODO(P0): Add code
-    auto r1 = mat1->GetRows(), c = mat1->GetColumns(), c2 = mat2->GetColumns();
+    auto r1 = mat1->GetRows();
+    auto c = mat1->GetColumns();
+    auto c2 = mat2->GetColumns();
     if (mat1->GetColumns() != mat2->GetRows()) {
       return std::unique_ptr<RowMatrix<T>>(nullptr);
     }
@@ -149,9 +153,9 @@ class RowMatrixOperations {
                                                     std::unique_ptr<RowMatrix<T>> matC) {
     // TODO(P0): Add code
     // can be optimized
-    auto res = MultiplyMatrices(matA, matB);
+    auto res = MultiplyMatrices(std::move(matA), std::move(matB));
     if (res) {
-      res = AddMatrices(res, matC);
+      res = AddMatrices(std::move(res), std::move(matC));
       if (res) {
         return res;
       }

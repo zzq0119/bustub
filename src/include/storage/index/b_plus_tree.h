@@ -12,6 +12,7 @@
 
 #include <queue>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "concurrency/transaction.h"
@@ -103,7 +104,8 @@ class BPlusTree {
   bool CoalesceOrRedistribute(N *node, Transaction *transaction = nullptr);
 
   template <typename N>
-  bool Coalesce(N *&neighbor_node, N *&node, InternalPage *&parent, int index, Transaction *transaction = nullptr);
+  bool Coalesce(N *&neighbor_node, N *&node, InternalPage *&parent, int index,  // NOLINT
+                Transaction *transaction = nullptr);
 
   template <typename N>
   void Redistribute(N *neighbor_node, N *node, int index);
@@ -118,7 +120,7 @@ class BPlusTree {
   void ToString(BPlusTreePage *page, BufferPoolManager *bpm) const;
 
   int isBalanced(page_id_t pid);
-  bool isPageCorr(page_id_t pid, std::pair<KeyType, KeyType> &out);
+  bool isPageCorr(page_id_t pid, std::pair<KeyType, KeyType> &out);  // NOLINT
 
   void LockRootPageId(bool exclusive);
 

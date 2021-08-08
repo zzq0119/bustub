@@ -91,9 +91,9 @@ class HashTableHeaderPage {
 
  private:
   static constexpr size_t LEN = 4080 / sizeof(page_id_t);
-  lsn_t lsn_;                      //	Log sequence number (Used in Project 4)
-  size_t size_;                    //	Number of Key & Value pairs the hash table can hold
-  page_id_t page_id_;              //	Self Page Id
+  lsn_t lsn_;                      // Log sequence number (Used in Project 4)
+  size_t size_;                    // Number of Key & Value pairs the hash table can hold
+  page_id_t page_id_;              // Self Page Id
   size_t next_ind_ = 0;            // The next index to add a new entry to block_page_ids_
   page_id_t block_page_ids_[LEN];  // Array of block page_id_t
 };
