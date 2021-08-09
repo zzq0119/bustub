@@ -37,7 +37,7 @@ BufferPoolManager::~BufferPoolManager() {
 Page *BufferPoolManager::FetchPageImpl(page_id_t page_id) {
   // 1.     Search the page table for the requested page (P).
   // 1.1    If P exists, pin it and return it immediately.
-  std::unique_lock lock(latch_);
+  std::lock_guard guard(latch_);
   frame_id_t frame;
   if (auto iter = page_table_.find(page_id); iter != page_table_.end()) {
     replacer_->Pin(iter->second);
@@ -56,17 +56,20 @@ Page *BufferPoolManager::FetchPageImpl(page_id_t page_id) {
   }
   // 2.     If R is dirty, write it back to the disk.
   if (pages_[frame].IsDirty()) {
-    lock.unlock();
-    FlushPageImpl(pages_[frame].page_id_);
-    lock.lock();
+    pages_[frame].WLatch();
+    pages_[frame].is_dirty_ = false;
+    disk_manager_->WritePage(pages_[frame].page_id_, pages_[frame].GetData());
+    pages_[frame].WUnlatch();
   }
   // 3.     Delete R from the page table and insert P.
   page_table_.erase(pages_[frame].page_id_);
   page_table_.insert({page_id, frame});
+  pages_[frame].ResetMemory();
   // 4.     Update P's metadata, read in the page content from disk, and then return a pointer to P.
+  pages_[frame].RLatch();
   disk_manager_->ReadPage(page_id, pages_[frame].data_);
+  pages_[frame].RUnlatch();
   pages_[frame].pin_count_ = 1;
-  pages_[frame].is_dirty_ = false;
   pages_[frame].page_id_ = page_id;
   return &pages_[frame];
 }
@@ -121,7 +124,10 @@ Page *BufferPoolManager::NewPageImpl(page_id_t *page_id) {
   // 3.   Update P's metadata, zero out memory and add P to the page table.
   *page_id = disk_manager_->AllocatePage();
   if (pages_[frame].is_dirty_) {
+    pages_[frame].WLatch();
     disk_manager_->WritePage(pages_[frame].page_id_, pages_[frame].data_);
+    pages_[frame].is_dirty_ = false;
+    pages_[frame].WUnlatch();
   }
   page_table_.erase(pages_[frame].page_id_);
   page_table_.insert({*page_id, frame});
@@ -159,12 +165,14 @@ bool BufferPoolManager::DeletePageImpl(page_id_t page_id) {
 
 void BufferPoolManager::FlushAllPagesImpl() {
   // You can do it!
+  std::lock_guard guard(latch_);
   for (size_t i = 0; i < pool_size_; ++i) {
-    if (pages_[i].is_dirty_) {
+    if (pages_[i].IsDirty()) {
+      pages_[i].WLatch();
       disk_manager_->WritePage(pages_[i].page_id_, pages_[i].data_);
       pages_[i].is_dirty_ = false;
+      pages_[i].WUnlatch();
     }
   }
 }
-
 }  // namespace bustub
