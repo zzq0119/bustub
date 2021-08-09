@@ -64,10 +64,9 @@ void BPlusTreePage::SetPageId(page_id_t page_id) { page_id_ = page_id; }
 bool BPlusTreePage::IsSafe(OpType type) const {
   if (type == OpType::INSERT) {
     return size_ < GetMaxSize();
-  } else {
-    assert(type == OpType::DELETE);
-    return IsLeafPage() ? size_ > GetMinSize() : size_ > GetMinSize() + 1;
   }
+  assert(type == OpType::DELETE);
+  return IsLeafPage() ? size_ > GetMinSize() : size_ > GetMinSize() + 1;
 }
 
 /*

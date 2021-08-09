@@ -16,7 +16,7 @@
 namespace bustub {
 // helper function to launch multiple threads
 template <typename... Args>
-void LaunchParallelTest(uint64_t num_threads, Args &&...args) {
+void LaunchParallelTest(uint64_t num_threads, Args &&... args) {
   std::vector<std::thread> thread_group;
 
   // Launch a group of threads
@@ -101,7 +101,7 @@ void InsertHelper16(BPlusTree<GenericKey<16>, RID, GenericComparator<16>> &tree,
   Transaction *transaction = new Transaction(0);
   for (auto key : keys) {
     int64_t value = key & 0xFFFFFFFF;
-    rid.Set((int32_t)(key >> 32), value);
+    rid.Set(static_cast<int32_t>(key >> 32), value);
     index_key.SetFromInteger(key);
     tree.Insert(index_key, rid, transaction);
   }
@@ -116,7 +116,7 @@ void InsertAndGetHelper16(BPlusTree<GenericKey<16>, RID, GenericComparator<16>> 
   Transaction *transaction = new Transaction(0);
   for (auto key : keys) {
     int64_t value = key & 0xFFFFFFFF;
-    rid.Set((int32_t)(key >> 32), value);
+    rid.Set(static_cast<int32_t>(key >> 32), value);
     index_key.SetFromInteger(key);
     tree.Insert(index_key, rid, transaction);
     std::vector<RID> rids;
@@ -131,7 +131,7 @@ void InsertAndGetHelper16(BPlusTree<GenericKey<16>, RID, GenericComparator<16>> 
 // helper function to iterate
 void IterateHelper(BPlusTree<GenericKey<16>, RID, GenericComparator<16>> &tree) {  // NOLINT
   int64_t current_key = 0;
-  for (auto iterator = tree.begin(); iterator.isEnd() == false; ++iterator) {
+  for (auto iterator = tree.begin(); !iterator.isEnd(); ++iterator) {
     auto location = (*iterator).second;
     EXPECT_TRUE(location.GetSlotNum() > current_key);
     current_key = location.GetSlotNum();
@@ -428,7 +428,7 @@ TEST(BPlusTreeConcurrentTest, InsertAndGetTest) {
   int64_t start_key = 1;
   int64_t current_key = start_key;
   index_key.SetFromInteger(start_key);
-  for (auto iterator = tree.Begin(index_key); iterator.isEnd() == false; ++iterator) {
+  for (auto iterator = tree.Begin(index_key); !iterator.isEnd(); ++iterator) {
     auto location = (*iterator).second;
     EXPECT_EQ(location.GetPageId(), 0);
     EXPECT_EQ(location.GetSlotNum(), current_key);
@@ -456,7 +456,7 @@ TEST(BPlusTreeConcurrentTest, DeleteAndGetTest) {
   // create b+ tree
   BPlusTree<GenericKey<16>, RID, GenericComparator<16>> tree("foo_pk", bpm, comparator);
   GenericKey<16> index_key;
-  RID rid;
+
   // create and fetch header_page
   page_id_t page_id;
   auto header_page = bpm->NewPage(&page_id);
@@ -472,7 +472,7 @@ TEST(BPlusTreeConcurrentTest, DeleteAndGetTest) {
   int64_t current_key = start_key;
   int64_t size = 0;
   index_key.SetFromInteger(start_key);
-  for (auto iterator = tree.Begin(index_key); iterator.isEnd() == false; ++iterator) {
+  for (auto iterator = tree.Begin(index_key); !iterator.isEnd(); ++iterator) {
     auto location = (*iterator).second;
     EXPECT_EQ(location.GetPageId(), 0);
     EXPECT_EQ(location.GetSlotNum(), current_key);
@@ -512,7 +512,7 @@ TEST(BPlusTreeConcurrentTest, DeleteTest3) {
   // create b+ tree
   BPlusTree<GenericKey<16>, RID, GenericComparator<16>> tree("foo_pk", bpm, comparator);
   GenericKey<16> index_key;
-  RID rid;
+
   // create and fetch header_page
   page_id_t page_id;
   auto header_page = bpm->NewPage(&page_id);
@@ -520,18 +520,24 @@ TEST(BPlusTreeConcurrentTest, DeleteTest3) {
   // sequential insert
   std::vector<int64_t> keys;
   int scale_factor = 100;
-  for (int i = 1; i <= scale_factor; i++) keys.push_back(i);
+  keys.reserve(scale_factor);
+  for (int i = 1; i <= scale_factor; i++) {
+    keys.push_back(i);
+  }
   InsertHelper16(tree, keys);
 
   std::vector<int64_t> remove_keys;
-  for (int i = 0; i <= (scale_factor - 20); i++) remove_keys.push_back(i);
+  remove_keys.reserve(scale_factor - 20);
+  for (int i = 0; i <= (scale_factor - 20); i++) {
+    remove_keys.push_back(i);
+  }
   LaunchParallelTest(2, DeleteHelper16, std::ref(tree), remove_keys);
 
   int64_t start_key = scale_factor - 20 + 1;
   int64_t current_key = start_key;
   int64_t size = 0;
   index_key.SetFromInteger(start_key);
-  for (auto iterator = tree.Begin(index_key); iterator.isEnd() == false; ++iterator) {
+  for (auto iterator = tree.Begin(index_key); !iterator.isEnd(); ++iterator) {
     auto location = (*iterator).second;
     EXPECT_EQ(location.GetPageId(), 0);
     EXPECT_EQ(location.GetSlotNum(), current_key);
@@ -555,7 +561,7 @@ void DeleteHelperSplit16(BPlusTree<GenericKey<16>, RID, GenericComparator<16>> &
   // create transaction
   Transaction *transaction = new Transaction(0);
   for (auto key : remove_keys) {
-    if ((uint64_t)key % total_threads == thread_itr) {
+    if (static_cast<uint64_t>(key) % total_threads == thread_itr) {
       index_key.SetFromInteger(key);
       tree.Remove(index_key, transaction);
     }
@@ -572,7 +578,6 @@ TEST(BPlusTreeConcurrentTest, DeleteTest4) {
   // create b+ tree
   BPlusTree<GenericKey<16>, RID, GenericComparator<16>> tree("foo_pk", bpm, comparator);
   GenericKey<16> index_key;
-  RID rid;
   // create and fetch header_page
   page_id_t page_id;
   auto header_page = bpm->NewPage(&page_id);
@@ -581,19 +586,25 @@ TEST(BPlusTreeConcurrentTest, DeleteTest4) {
   // sequential insert
   std::vector<int64_t> keys;
   int scale_factor = 1000;
-  for (int i = 1; i <= scale_factor; i++) keys.push_back(i);
+  keys.reserve(scale_factor);
+  for (int i = 1; i <= scale_factor; i++) {
+    keys.push_back(i);
+  }
 
   InsertHelper16(tree, keys);
 
   std::vector<int64_t> remove_keys;
-  for (int i = 1; i <= (scale_factor - 20); i++) remove_keys.push_back(i);
+  remove_keys.reserve(scale_factor - 20);
+  for (int i = 1; i <= (scale_factor - 20); i++) {
+    remove_keys.push_back(i);
+  }
   LaunchParallelTest(3, DeleteHelperSplit16, std::ref(tree), remove_keys, 3);
 
   int64_t start_key = scale_factor - 20 + 1;
   int64_t current_key = start_key;
   int64_t size = 0;
   index_key.SetFromInteger(start_key);
-  for (auto iterator = tree.Begin(index_key); iterator.isEnd() == false; ++iterator) {
+  for (auto iterator = tree.Begin(index_key); !iterator.isEnd(); ++iterator) {
     auto location = (*iterator).second;
     EXPECT_EQ(location.GetPageId(), 0);
     EXPECT_EQ(location.GetSlotNum(), current_key);
@@ -619,7 +630,7 @@ TEST(BPlusTreeConcurrentTest, DeleteTest5) {
   // create b+ tree
   BPlusTree<GenericKey<16>, RID, GenericComparator<16>> tree("foo_pk", bpm, comparator);
   GenericKey<16> index_key;
-  RID rid;
+
   // create and fetch header_page
   page_id_t page_id;
   auto header_page = bpm->NewPage(&page_id);
@@ -630,20 +641,26 @@ TEST(BPlusTreeConcurrentTest, DeleteTest5) {
   // sequential insert
   std::vector<int64_t> keys;
   int scale_factor = 1000;
-  for (int i = 1; i <= scale_factor; i++) keys.push_back(i);
+  keys.reserve(scale_factor);
+  for (int i = 1; i <= scale_factor; i++) {
+    keys.push_back(i);
+  }
   std::shuffle(begin(keys), end(keys), g);
 
   InsertHelper16(tree, keys);
 
   std::vector<int64_t> remove_keys;
-  for (int i = 1; i <= (scale_factor - 20); i++) remove_keys.push_back(i);
+  remove_keys.reserve(scale_factor - 20);
+  for (int i = 1; i <= (scale_factor - 20); i++) {
+    remove_keys.push_back(i);
+  }
   LaunchParallelTest(4, DeleteHelperSplit16, std::ref(tree), remove_keys, 4);
 
   int64_t start_key = scale_factor - 20 + 1;
   int64_t current_key = start_key;
   int64_t size = 0;
   index_key.SetFromInteger(start_key);
-  for (auto iterator = tree.Begin(index_key); iterator.isEnd() == false; ++iterator) {
+  for (auto iterator = tree.Begin(index_key); !iterator.isEnd(); ++iterator) {
     auto location = (*iterator).second;
     EXPECT_EQ(location.GetPageId(), 0);
     EXPECT_EQ(location.GetSlotNum(), current_key);
@@ -668,9 +685,9 @@ void InsertHelperSplit16(BPlusTree<GenericKey<16>, RID, GenericComparator<16>> &
   // create transaction
   Transaction *transaction = new Transaction(0);
   for (auto key : keys) {
-    if ((uint64_t)key % total_threads == thread_itr) {
+    if (static_cast<uint64_t>(key) % total_threads == thread_itr) {
       int64_t value = key & 0xFFFFFFFF;
-      rid.Set((int32_t)(key >> 32), value);
+      rid.Set(static_cast<int32_t>(key >> 32), value);
       index_key.SetFromInteger(key);
       tree.Insert(index_key, rid, transaction);
     }
@@ -688,14 +705,15 @@ TEST(BPlusTreeConcurrentTest, MixTest2) {
   // create b+ tree
   BPlusTree<GenericKey<16>, RID, GenericComparator<16>> tree("foo_pk", bpm, comparator);
   GenericKey<16> index_key;
-  RID rid;
 
   // create and fetch header_page
   page_id_t page_id;
   auto header_page = bpm->NewPage(&page_id);
   (void)header_page;
   // first, populate index
-  std::vector<int64_t> keys, all_deleted;
+  std::vector<int64_t> keys;
+  std::vector<int64_t> all_deleted;
+  all_deleted.reserve(1000);
   for (int i = 1; i <= 1000; ++i) {
     all_deleted.push_back(i);
     keys.push_back(i + 1000);
@@ -724,7 +742,7 @@ TEST(BPlusTreeConcurrentTest, MixTest2) {
   int64_t current_key = 1001;
   int64_t size = 0;
   index_key.SetFromInteger(current_key);
-  for (auto iterator = tree.Begin(index_key); iterator.isEnd() == false; ++iterator) {
+  for (auto iterator = tree.Begin(index_key); !iterator.isEnd(); ++iterator) {
     auto location = (*iterator).second;
     EXPECT_EQ(location.GetPageId(), 0);
     EXPECT_EQ(location.GetSlotNum(), current_key);
@@ -752,19 +770,25 @@ TEST(BPlusTreeConcurrentTest, MixTest3) {
   // create b+ tree
   BPlusTree<GenericKey<16>, RID, GenericComparator<16>> tree("foo_pk", bpm, comparator);
   GenericKey<16> index_key;
-  RID rid;
 
   // create and fetch header_page
   page_id_t page_id;
   auto header_page = bpm->NewPage(&page_id);
   (void)header_page;
   // first, populate index
-  std::vector<int64_t> keys, keys2, deleted1, deleted2;
   int scale = 10000;
+  std::vector<int64_t> keys;
+  std::vector<int64_t> keys2;
+  std::vector<int64_t> deleted1;
+  std::vector<int64_t> deleted2;
+  keys.reserve(scale);
+  keys2.reserve(scale);
+  deleted1.reserve(scale);
+  deleted2.reserve(scale);
   for (int i = 1; i <= scale; ++i) {
     keys.push_back(i);
   }
-  std::random_shuffle(keys.begin(), keys.end());
+  std::random_shuffle(keys.begin(), keys.end());  // NOLINT
   for (int i = 1; i <= scale / 4; ++i) {
     deleted1.push_back(keys.back());
     keys.pop_back();
@@ -821,7 +845,7 @@ TEST(BPlusTreeConcurrentTest, MixTest3) {
   int64_t current_key = 0;
   int64_t size = 0;
   index_key.SetFromInteger(current_key);
-  for (auto iterator = tree.begin(); iterator.isEnd() == false; ++iterator) {
+  for (auto iterator = tree.begin(); !iterator.isEnd(); ++iterator) {
     size = size + 1;
   }
 

@@ -43,7 +43,8 @@ Page *BufferPoolManager::FetchPageImpl(page_id_t page_id) {
     replacer_->Pin(iter->second);
     pages_[iter->second].pin_count_++;
     return &pages_[iter->second];
-  } else if (!free_list_.empty()) {
+  }
+  if (!free_list_.empty()) {
     // 1.2    If P does not exist, find a replacement page (R) from either the free list or the replacer.
     //        Note that pages are always found from the free list first.
     frame = free_list_.front();
@@ -80,29 +81,28 @@ bool BufferPoolManager::UnpinPageImpl(page_id_t page_id, bool is_dirty) {
   if (pages_[iter->second].pin_count_ <= 0) {
     assert(false);
     return false;
-  } else {
-    --pages_[iter->second].pin_count_;
-    if (pages_[iter->second].pin_count_ == 0) {
-      replacer_->Unpin(iter->second);
-    }
-    return true;
   }
+  --pages_[iter->second].pin_count_;
+  if (pages_[iter->second].pin_count_ == 0) {
+    replacer_->Unpin(iter->second);
+  }
+  return true;
 }
 // optimize?
 bool BufferPoolManager::FlushPageImpl(page_id_t page_id) {
   // Make sure you call DiskManager::WritePage!
   std::lock_guard guard(latch_);
-  if (auto iter = page_table_.find(page_id); iter == page_table_.end()) {
+  auto iter = page_table_.find(page_id);
+  if (iter == page_table_.end()) {
     return false;
-  } else {
-    if (pages_[iter->second].IsDirty()) {
-      pages_[iter->second].WLatch();
-      pages_[iter->second].is_dirty_ = false;
-      disk_manager_->WritePage(page_id, pages_[iter->second].GetData());
-      pages_[iter->second].WUnlatch();
-    }
-    return true;
   }
+  if (pages_[iter->second].IsDirty()) {
+    pages_[iter->second].WLatch();
+    pages_[iter->second].is_dirty_ = false;
+    disk_manager_->WritePage(page_id, pages_[iter->second].GetData());
+    pages_[iter->second].WUnlatch();
+  }
+  return true;
 }
 // ok
 Page *BufferPoolManager::NewPageImpl(page_id_t *page_id) {
@@ -142,16 +142,16 @@ bool BufferPoolManager::DeletePageImpl(page_id_t page_id) {
     // 2.   If P exists, but has a non-zero pin-count, return false. Someone is using the page.
     // 3.   Otherwise, P can be deleted. Remove P from the page table, reset its metadata and return it to the free
     // list.
-    if (frame_id_t frame = iter->second; pages_[frame].pin_count_ > 0) {
+    frame_id_t frame = iter->second;
+    if (pages_[frame].pin_count_ > 0) {
       // assert(false);
       return false;
-    } else {
-      replacer_->Pin(frame);
-      page_table_.erase(iter);
-      pages_[frame].ResetMemory();
-      pages_[frame].is_dirty_ = false;
-      free_list_.push_back(frame);
     }
+    replacer_->Pin(frame);
+    page_table_.erase(iter);
+    pages_[frame].ResetMemory();
+    pages_[frame].is_dirty_ = false;
+    free_list_.push_back(frame);
   }
   disk_manager_->DeallocatePage(page_id);
   return true;

@@ -22,11 +22,10 @@ bool LRUReplacer::Victim(frame_id_t *frame_id) {
   std::lock_guard<std::mutex> guard(latch);
   if (frame_map_.empty()) {
     return false;
-  } else {
-    *frame_id = *frame_list_.begin();
-    EraseFrame(*frame_id);
-    return true;
   }
+  *frame_id = *frame_list_.begin();
+  EraseFrame(*frame_id);
+  return true;
 }
 
 void LRUReplacer::Pin(frame_id_t frame_id) {

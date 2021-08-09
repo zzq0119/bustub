@@ -122,7 +122,8 @@ class Catalog {
                          size_t keysize) {
     index_oid_t id = next_index_oid_++;
     index_names_[table_name].emplace(id, index_name);
-    auto index = std::make_unique<Index>(new IndexMetadata(index_name, table_name, &schema, key_attrs));
+    auto index = std::make_unique<BPlusTreeIndex<KeyType, ValueType, KeyComparator>>(
+        new IndexMetadata(index_name, table_name, &schema, key_attrs), bpm_);
     auto res = std::make_unique<IndexInfo>(key_schema, index_name, std::move(index), id, table_name, keysize);
     indexes_.emplace(id, std::move(res));
     return indexes_.at(id).get();
@@ -149,6 +150,7 @@ class Catalog {
   std::vector<IndexInfo *> GetTableIndexes(const std::string &table_name) {
     auto &mp = index_names_.at(table_name);
     std::vector<IndexInfo *> res;
+    res.reserve((mp.size()));
     for (auto &[name, id] : mp) {
       res.push_back(indexes_.at(id).get());
     }

@@ -194,7 +194,7 @@ TEST(BPlusTreeDeleteTests, DeleteBasic) {
   std::vector<int64_t> keys = {1, 2, 3, 4, 5};
   for (auto key : keys) {
     int64_t value = key & 0xFFFFFFFF;
-    rid.Set((int32_t)(key >> 32), value);
+    rid.Set(static_cast<int32_t>(key >> 32), value);
     index_key.SetFromInteger(key);
     tree.Insert(index_key, rid, transaction);
   }
@@ -212,7 +212,7 @@ TEST(BPlusTreeDeleteTests, DeleteBasic) {
   int64_t start_key = keys[0];
   int64_t current_key = start_key;
   index_key.SetFromInteger(start_key);
-  for (auto iterator = tree.Begin(index_key); iterator.isEnd() == false; ++iterator) {
+  for (auto iterator = tree.Begin(index_key); !iterator.isEnd(); ++iterator) {
     auto location = (*iterator).second;
     EXPECT_EQ(location.GetPageId(), 0);
     EXPECT_EQ(location.GetSlotNum(), current_key);
@@ -269,13 +269,14 @@ TEST(BPlusTreeDeleteTests, DeleteScale) {
 
   int scale = 100;
   std::vector<int64_t> keys;
+  keys.reserve(scale);
   for (int i = 0; i < scale; ++i) {
     keys.push_back(i + 1);
   }
 
   for (auto key : keys) {
     int64_t value = key & 0xFFFFFFFF;
-    rid.Set((int32_t)(key >> 32), value);
+    rid.Set(static_cast<int32_t>(key >> 32), value);
     index_key.SetFromInteger(key);
     // std::cout << "insert :" << key << std::endl;
     tree.Insert(index_key, rid, transaction);
@@ -297,7 +298,7 @@ TEST(BPlusTreeDeleteTests, DeleteScale) {
   int64_t start_key = 1;
   int64_t current_key = start_key;
   index_key.SetFromInteger(start_key);
-  for (auto iterator = tree.Begin(index_key); iterator.isEnd() == false; ++iterator) {
+  for (auto iterator = tree.Begin(index_key); !iterator.isEnd(); ++iterator) {
     auto location = (*iterator).second;
     EXPECT_EQ(location.GetPageId(), 0);
     EXPECT_EQ(location.GetSlotNum(), current_key);
@@ -350,19 +351,20 @@ TEST(BPlusTreeDeleteTests, DeleteRandom) {
   tree.openCheck = false;
   std::vector<int64_t> keys;
   int scale = 10000;
+  keys.reserve(scale);
   for (int i = 0; i < scale; ++i) {
     keys.push_back(i + 1);
   }
-  std::random_shuffle(keys.begin(), keys.end());
+  std::random_shuffle(keys.begin(), keys.end());  // NOLINT
 
   for (auto key : keys) {
     int64_t value = key & 0xFFFFFFFF;
-    rid.Set((int32_t)(key >> 32), value);
+    rid.Set(static_cast<int32_t>(key >> 32), value);
     index_key.SetFromInteger(key);
     tree.Insert(index_key, rid, transaction);
   }
   ASSERT_TRUE(tree.Check(true));
-  std::random_shuffle(keys.begin(), keys.end());
+  std::random_shuffle(keys.begin(), keys.end());  // NOLINT
   // delete all
   for (auto key : keys) {
     index_key.SetFromInteger(key);
