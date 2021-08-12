@@ -93,7 +93,7 @@ void BPLUSTREE_TYPE::StartNewTree(const KeyType &key, const ValueType &value) {
     throw Exception(ExceptionType::OUT_OF_MEMORY, "OUT_OF_MEMORY");
   }
   auto root = reinterpret_cast<LeafPage *>(page->GetData());
-  root->Init(root_page_id_);
+  root->Init(root_page_id_, -1, leaf_max_size_);
   UpdateRootPageId(true);
   root->Insert(key, value, comparator_);
   buffer_pool_manager_->UnpinPage(root_page_id_, true);
@@ -144,7 +144,7 @@ N *BPLUSTREE_TYPE::Split(N *node, Transaction *transaction) {
   transaction->AddIntoPageSet(page);
   auto new_page = reinterpret_cast<N *>(page->GetData());
 
-  new_page->Init(id, node->GetParentPageId());
+  new_page->Init(id, node->GetParentPageId(), leaf_max_size_);
   if constexpr (std::is_same_v<N, LeafPage>) {  // NOLINT
     node->MoveHalfTo(new_page);
     new_page->SetNextPageId(node->GetNextPageId());
@@ -174,7 +174,7 @@ void BPLUSTREE_TYPE::InsertIntoParent(BPlusTreePage *old_node, const KeyType &ke
       throw Exception(ExceptionType::OUT_OF_MEMORY, "OUT_OF_MEMORY");
     }
     auto root = reinterpret_cast<InternalPage *>(page->GetData());
-    root->Init(root_page_id_);
+    root->Init(root_page_id_, -1, internal_max_size_);
     root->PopulateNewRoot(old_node->GetPageId(), key, new_node->GetPageId());
     old_node->SetParentPageId(root_page_id_);
     new_node->SetParentPageId(root_page_id_);
