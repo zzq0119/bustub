@@ -90,7 +90,6 @@ class Catalog {
     auto iter = names_.find(table_name);
     if (iter == names_.end()) {
       throw std::out_of_range("name not exists");
-      return nullptr;
     }
     return tables_.find(iter->second)->second.get();
   }
@@ -100,7 +99,6 @@ class Catalog {
     auto iter = tables_.find(table_oid);
     if (iter == tables_.end()) {
       throw std::out_of_range("oid not exists");
-      return nullptr;
     }
     return iter->second.get();
   }
@@ -121,7 +119,7 @@ class Catalog {
                          const Schema &schema, const Schema &key_schema, const std::vector<uint32_t> &key_attrs,
                          size_t keysize) {
     index_oid_t id = next_index_oid_++;
-    index_names_[table_name].emplace(id, index_name);
+    index_names_[table_name].emplace(index_name, id);
     auto index = std::make_unique<BPlusTreeIndex<KeyType, ValueType, KeyComparator>>(
         new IndexMetadata(index_name, table_name, &schema, key_attrs), bpm_);
     auto res = std::make_unique<IndexInfo>(key_schema, index_name, std::move(index), id, table_name, keysize);
@@ -133,7 +131,6 @@ class Catalog {
     auto iter = index_names_.find(table_name);
     if (iter == index_names_.end()) {
       throw std::out_of_range("name not exists");
-      return nullptr;
     }
     return indexes_.at(iter->second.at(index_name)).get();
   }
@@ -142,13 +139,16 @@ class Catalog {
     auto iter = indexes_.find(index_oid);
     if (iter == indexes_.end()) {
       throw std::out_of_range("oid not exists");
-      return nullptr;
     }
     return iter->second.get();
   }
 
   std::vector<IndexInfo *> GetTableIndexes(const std::string &table_name) {
-    auto &mp = index_names_.at(table_name);
+    auto iter = index_names_.find(table_name);
+    if (iter == index_names_.end()) {
+      throw std::out_of_range("oid not exists");
+    }
+    auto &mp = iter->second;
     std::vector<IndexInfo *> res;
     res.reserve((mp.size()));
     for (auto &[name, id] : mp) {
